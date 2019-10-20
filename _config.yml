@@ -1,9 +1,9 @@
 # Site settings
-title: Hux Blog
+title: Maggie Blog
 SEOTitle: Maggie Blog
 header-img: img/home-bg.jpg
 email: lavean2014@gmail.com
-description: "关于程序与设计、黑客与画家 | Web & Mobile Lover，Software Engineer，UX Designer | 与你一起发现更大的世界。"
+description: "遇见更好的自己"
 keyword: "Maggie, virtualization"
 url: "https://maggie262.github.io"              # your host, for absolute URL
 baseurl: ""                             # for example, '/blog' if your blog hosted on 'host/blog'
@@ -13,10 +13,10 @@ future: true
 
 # SNS settings
 RSS: false
-weibo_username:     huxpro
-zhihu_username:     huxpro
-github_username:    huxpro
-twitter_username:   huxpro
+#weibo_username:     huxpro
+#zhihu_username:     huxpro
+github_username:    Maggie262
+#twitter_username:   Maggie
 #facebook_username:  huxpro
 #linkedin_username:  firstname-lastname-idxxxx
 
