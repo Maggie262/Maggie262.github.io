@@ -5,7 +5,7 @@ header-img: img/home-bg.jpg
 email: lavean2014@gmail.com
 description: "关于程序与设计、黑客与画家 | Web & Mobile Lover，Software Engineer，UX Designer | 与你一起发现更大的世界。"
 keyword: "Maggie, virtualization"
-url: "https://huangxuan.me"              # your host, for absolute URL
+url: "https://maggie262@github.io"              # your host, for absolute URL
 baseurl: ""                             # for example, '/blog' if your blog hosted on 'host/blog'
 
 # Publish posts or collection documents with a future date.
