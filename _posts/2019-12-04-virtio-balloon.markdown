@@ -8,10 +8,10 @@ header-img: "img/post-bg-digital-native.jpg"
 catalog: true
 tags:
     - memory
-    - UX/UI
+    - virtio
 ---
 
-### virtio balloon
+### qemu-virtio balloon
 
 
 
@@ -316,5 +316,214 @@ virtio_balloon_to_target
 
 
 
+### PCI& MMIO
+
+#### qemu后端初始化
 
 
+
+```c
+// virtio-balloon.c
+virtio_balloon_device_realize()
+	// 设置device_id, config_vector, vq[0].vector, vq[1].vector, vq[2].vector
+	-> virtio_init
+	
+// handle_output 和 receive_stats函数中
+static void balloon_stats_poll_cb(void *opaque)
+{
+	...
+	virtio_notify(vdev, s->svq)
+}
+static void virtio_balloon_handle_output(VirtIODevice *vdev, VirtQueue *vq)
+{
+    ...
+    virtio_notify(vdev, vq)
+}
+static void virtio_balloon_receive_stats(VirtIODevice *vdev, VirtQueue *vq)
+{
+    ...
+    virtio_notify(vdev, vq)
+}
+static void virtio_balloon_to_target(void *opaque, ram_addr_t target)
+{
+    ...
+    virtio_notify_config(vdev);
+}
+```
+
+```c
+virtio_notify
+virtio_notify_config
+	-> virtio_notify_vector   // config_vector 或者 virtqueue_vector
+		// 其中k -> Bus, PciBus 或者 MmioBus
+		-> k->notify(qbus->parent, vector); 
+```
+
+* PCI Bus
+
+  ```c
+  virtio_pci_bus_class_init
+  {
+  	...
+  	k->notify = virtio_pci_notify;
+  }
+  
+  // 其中中断注入的核心函数
+  // vector为
+  static void virtio_pci_notify(DeviceState *d, uint16_t vector)
+  {
+      VirtIOPCIProxy *proxy = to_virtio_pci_proxy_fast(d);
+  
+      if (msix_enabled(&proxy->pci_dev))
+          msix_notify(&proxy->pci_dev, vector);   /* msix_notify通过写pci配置空间来传递中断 */
+      else {
+          VirtIODevice *vdev = virtio_bus_get_device(&proxy->bus);
+          pci_set_irq(&proxy->pci_dev, vdev->isr & 1);   /* 通过irq传递中断 */
+      }
+  }
+  ```
+
+* MMIO Bus
+
+  ```c
+  static void virtio_mmio_bus_class_init(ObjectClass *klass, void *data)
+  {
+  	...
+      k->notify = virtio_mmio_update_irq;
+  }
+  
+  // 其中中断注入的核心函数
+  static void virtio_mmio_update_irq(DeviceState *opaque, uint16_t vector)
+  {
+      VirtIOMMIOProxy *proxy = VIRTIO_MMIO(opaque);
+      VirtIODevice *vdev = virtio_bus_get_device(&proxy->bus);
+      int level;
+  
+      if (!vdev) {
+          return;
+      }
+      level = (vdev->isr != 0);
+      DPRINTF("virtio_mmio setting IRQ %d\n", level);
+      qemu_set_irq(proxy->irq, level);   // 调用irq->handler
+  }
+  ```
+
+  
+
+####Guest前端初始化
+
+```c
+virtballoon_probe
+	// 初始化virtio-balloon对应的三个virtqueue
+	-> init_vqs
+		-> vb->vdev->config->find_vqs(vb->vdev, nvqs, vqs, callbacks, names);
+```
+
+下面看PCI总线协议和MMIO总线协议下find_vqs的不同
+
+* PCI总线协议
+
+  ```c
+  static const struct virtio_config_ops virtio_pci_config_nodev_ops = {
+  	...
+  	.find_vqs	= vp_modern_find_vqs,
+  }
+  
+  // 核心函数
+  vp_modern_find_vqs
+  	-> vp_find_vqs
+  		-> vp_try_to_find_vqs
+  ```
+
+  看一下具体实现的函数：
+
+  * 优先为config 和 每个queues 单独分配msix
+  * 分配不成功，则为config分配一个msix, 为所有queues分配一个msix(共享)
+  * least choice: 分配irq(共享) 
+
+  ```c
+  /* the config->find_vqs() implementation */
+  int vp_find_vqs(struct virtio_device *vdev, unsigned nvqs,
+  		struct virtqueue *vqs[],
+  		vq_callback_t *callbacks[],
+  		const char * const names[])
+  {
+  	int err;
+  
+  	/* Try MSI-X with one vector per queue. */
+  	err = vp_try_to_find_vqs(vdev, nvqs, vqs, callbacks, names, true, true);
+  	if (!err)
+  		return 0;
+  	/* Fallback: MSI-X with one vector for config, one shared for queues. */
+  	err = vp_try_to_find_vqs(vdev, nvqs, vqs, callbacks, names,
+  				 true, false);
+  	if (!err)
+  		return 0;
+  	/* Finally fall back to regular interrupts. */
+  	return vp_try_to_find_vqs(vdev, nvqs, vqs, callbacks, names,
+  				  false, false);
+  }
+  
+  /*
+  static int vp_try_to_find_vqs(struct virtio_device *vdev, unsigned nvqs,
+  			      struct virtqueue *vqs[],
+  			      vq_callback_t *callbacks[],
+  			      const char * const names[],
+  			      bool use_msix,   // 使用msix 或者 irq
+  			      bool per_vq_vectors)  // 是否共享
+  */
+  ```
+
+  
+
+* MMIO总线协议
+
+  ```c
+  static const struct virtio_config_ops virtio_mmio_config_ops = {
+  	...
+  	.find_vqs	= vm_find_vqs,
+  };
+  
+  // 核心函数 vm_find_vqs
+  find_vqs
+  	-> vm_find_vqs
+  		-> request_irq(irq, vm_interrupt, IRQF_SHARED, dev_name(&vdev->dev), vm_dev);
+  ```
+
+  * 这里irq的申请函数`request_irq`，注意参数`IRQF_SHARED`,即该设备的config和所有virt-queue使用同一个irq.
+
+  * 中断处理函数为`vm_interrupt`，看一下函数的具体实现：
+
+    会通过`status`判断是configuration change interrupt / vring interrupt
+
+    ```c
+    /* Notify all virtqueues on an interrupt. */
+    static irqreturn_t vm_interrupt(int irq, void *opaque)
+    {
+    	struct virtio_mmio_device *vm_dev = opaque;
+    	struct virtio_mmio_vq_info *info;
+    	unsigned long status;
+    	unsigned long flags;
+    	irqreturn_t ret = IRQ_NONE;
+    
+    	/* Read and acknowledge interrupts */
+    	status = readl(vm_dev->base + VIRTIO_MMIO_INTERRUPT_STATUS);
+    	writel(status, vm_dev->base + VIRTIO_MMIO_INTERRUPT_ACK);
+    
+    	if (unlikely(status & VIRTIO_MMIO_INT_CONFIG)) {
+    		virtio_config_changed(&vm_dev->vdev);     // config change interrupt
+    		ret = IRQ_HANDLED;
+    	}
+    
+    	if (likely(status & VIRTIO_MMIO_INT_VRING)) {   // vring interrupt
+    		spin_lock_irqsave(&vm_dev->lock, flags);
+    		list_for_each_entry(info, &vm_dev->virtqueues, node)
+    			ret |= vring_interrupt(irq, info->vq);   
+    		spin_unlock_irqrestore(&vm_dev->lock, flags);
+    	}
+    
+    	return ret;
+    }
+    ```
+
+    
