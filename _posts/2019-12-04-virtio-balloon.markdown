@@ -316,7 +316,7 @@ virtio_balloon_to_target
 
 
 
-### PCI& MMIO
+### PCI& MMIO总线协议
 
 #### qemu后端初始化
 
@@ -527,3 +527,5 @@ virtballoon_probe
     ```
 
     
+
+![](..\img\virtio-balloon.jpg)
