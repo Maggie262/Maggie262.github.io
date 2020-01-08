@@ -528,4 +528,4 @@ virtballoon_probe
 
     
 
-![](/img/in-post/post-vb-virtio-balloon.png)
+![](../img/in-post/post-vb-virtio-balloon.svg)
