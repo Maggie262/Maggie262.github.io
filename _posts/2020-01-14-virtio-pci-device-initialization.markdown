@@ -8,51 +8,11 @@
 
 * header-type=00h
 
-  ![1579002382068](D:\temp\Maggie262.github.io\_posts\2020-01-14-virtio-pci-device-initialization.assets\1579002382068.png)
-
-  | register | offset | bits 31-24                 | bits 23-16           | bits 15-8     | bits 7-0        |
-  | -------- | ------ | -------------------------- | -------------------- | ------------- | --------------- |
-  | 00       | 00     | Device ID                  | Vendor ID            |               |                 |
-  | 01       | 04     | Status                     | Command              |               |                 |
-  | 02       | 08     | Class code                 | Subclass             | Prog IF       | Revision ID     |
-  | 03       | 0C     | BIST                       | Header type          | Latency Timer | Cache Line Size |
-  | 04       | 10     | Base address #0 (BAR0)     |                      |               |                 |
-  | 05       | 14     | Base address #1 (BAR1)     |                      |               |                 |
-  | 06       | 18     | Base address #2 (BAR2)     |                      |               |                 |
-  | 07       | 1C     | Base address #3 (BAR3)     |                      |               |                 |
-  | 08       | 20     | Base address #4 (BAR4)     |                      |               |                 |
-  | 09       | 24     | Base address #5 (BAR5)     |                      |               |                 |
-  | 0A       | 28     | Cardbus CIS Pointer        |                      |               |                 |
-  | 0B       | 2C     | Subsystem ID               | Subsystem Vendor ID  |               |                 |
-  | 0C       | 30     | Expansion ROM base address |                      |               |                 |
-  | 0D       | 34     | Reserved                   | Capabilities Pointer |               |                 |
-  | 0E       | 38     | Reserved                   |                      |               |                 |
-  | 0F       | 3C     | Max latency                | Min Grant            | Interrupt PIN | Interrupt Line  |
+  ![](/img/in-post/post-pci-device2.bmp)
 
 * header-type=01h(pci-to-pci-bridge)
 
-  ![1579002416780](D:\temp\Maggie262.github.io\_posts\2020-01-14-virtio-pci-device-initialization.assets\157900241678.png)
-
-  | register | offset | bits 31-24                       | bits 23-16               | bits 15-8            | bits 7-0           |
-  | -------- | ------ | -------------------------------- | ------------------------ | -------------------- | ------------------ |
-  | 00       | 00     | Device ID                        | Vendor ID                |                      |                    |
-  | 01       | 04     | Status                           | Command                  |                      |                    |
-  | 02       | 08     | Class code                       | Subclass                 | Prog IF              | Revision ID        |
-  | 03       | 0C     | BIST                             | Header type              | Latency Timer        | Cache Line Size    |
-  | 04       | 10     | Base address #0 (BAR0)           |                          |                      |                    |
-  | 05       | 14     | Base address #1 (BAR1)           |                          |                      |                    |
-  | 06       | 18     | Secondary Latency Timer          | Subordinate Bus Number   | Secondary Bus Number | Primary Bus Number |
-  | 07       | 1C     | Secondary Status                 | I/O Limit                | I/O Base             |                    |
-  | 08       | 20     | Memory Limit                     | Memory Base              |                      |                    |
-  | 09       | 24     | Prefetchable Memory Limit        | Prefetchable Memory Base |                      |                    |
-  | 0A       | 28     | Prefetchable Base Upper 32 Bits  |                          |                      |                    |
-  | 0B       | 2C     | Prefetchable Limit Upper 32 Bits |                          |                      |                    |
-  | 0C       | 30     | I/O Limit Upper 16 Bits          | I/O Base Upper 16 Bits   |                      |                    |
-  | 0D       | 34     | Reserved                         | Capability Pointer       |                      |                    |
-  | 0E       | 38     | Expansion ROM base address       |                          |                      |                    |
-  | 0F       | 3C     | Bridge Control                   | Interrupt PIN            | Interrupt Line       |                    |
-
-
+  ![](/img/in-post/post-pci-device2.bmp)
 
 
 
@@ -91,7 +51,7 @@ bar空间的地址存放在PCI的configuration中，范围为0x10~0x27.
 
 
 
-####PCI 设备初始化
+#### PCI 设备初始化
 
 * 首先看一下得到bar空间大小的方式
 
@@ -170,5 +130,5 @@ bar空间的地址存放在PCI的configuration中，范围为0x10~0x27.
 
 
 
-![](/img/in-post/Snipaste_2020-01-14_20-35-36.bmp)
+
 
