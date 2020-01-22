@@ -110,9 +110,11 @@ VHOST_SET_VRING_ERR
 
 http://blog.chinaunix.net/uid-28541347-id-5786547.html
 
+https://blog.csdn.net/qq_15437629/article/details/77899905
 
+https://cloud.tencent.com/developer/article/1075606
 
-
+https://www.cnblogs.com/ck1020/p/8341914.html
 
 
 
