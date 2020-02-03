@@ -61,7 +61,7 @@ vhost架构的一个惊人的特性是其并没有绑定在KVM上。其仅是一
 
 * 如果使用 qemu 作为 vhost-user 的 server 端实现，在启动 qemu 时，我们需要指定 -mem-path 和 -netdev 参数，如：
 
-  ```
+  ```shell
   $ qemu -m 1024 -mem-path /hugetlbfs,prealloc=on,share=on \
   -netdev type=vhost-user,id=net0,file=/path/to/socket \
   -device virtio-net-pci,netdev=net0
@@ -71,8 +71,8 @@ vhost架构的一个惊人的特性是其并没有绑定在KVM上。其仅是一
 
   * -netdev type=vhost-user 指定通信方案，file=/path/to/socket 指定 socket 文件。
 
-* qemu在初始化vhost-user相关设备时，会通过socket建立Vring和事件通知机制。启动之后Guest和Host通信遵循virtio方式
-  * qemu中的vhost-user模块将与Guest的握手结果，通过socket通知到host用户态的vhost-backend
+* qemu在初始化vhost-user相关设备时，会**通过socket建立Vring和事件通知机制**。启动之后Guest和Host通信遵循virtio方式
+  * qemu中的vhost-user模块将与Guest的握手结果，通过socket通知到宿主机用户态的vhost-backend
     * 在guest启动后，加载virtio-net驱动，会写寄存器VIRTIO_PCI_GUEST_FEATURES，这个写操作会被kvm捕获传递给qemu。（qemu又会通知到vhost_backend）
     *  当guest中virtio-net加载完成后会写VIRTIO_PCI_STATUS寄存器，这个操作同样会被kvm捕获传递给qemu
   * 虚拟机驱动之后，就是host用户态的vhost-backend和Guest中的用户态进程之间的通信了（通过virtio）
@@ -117,6 +117,42 @@ https://cloud.tencent.com/developer/article/1075606
 https://www.cnblogs.com/ck1020/p/8341914.html
 
 
+
+
+
+### vsock
+
+cloud-hypervisor中对virtio-vsock设备的描述
+
+
+
+```
+ The `VsockEpollHandler` implements the runtime logic of our vsock device:
+ 1. Respond to TX queue events by wrapping virtio buffers into `VsockPacket`s, then sending those
+    packets to the `VsockBackend`;
+ 2. Forward backend FD event notifications to the `VsockBackend`;
+ 3. Fetch incoming packets from the `VsockBackend` and place them into the virtio RX queue;
+ 4. Whenever we have processed some virtio buffers (either TX or RX), let the driver know by
+    raising our assigned IRQ.
+
+ In a nutshell, the `VsockEpollHandler` logic looks like this:
+ - on TX queue event:
+   - fetch all packets from the TX queue and send them to the backend; then
+   - if the backend has queued up any incoming packets, fetch them into any available RX buffers.
+ - on RX queue event:
+   - fetch any incoming packets, queued up by the backend, into newly available RX buffers.
+ - on backend event:
+   - forward the event to the backend; then
+   - again, attempt to fetch any incoming packets queued by the backend into virtio RX buffers.
+
+```
+
+
+
+virtio-vsock设备有两个virtio queue
+
+* 其中tx-queue负责接收前端的virtio buffer，并构造Vockpacket，发送到vsock-backend进行处理
+* rx-queue：vsock-backend产生的vsock-packet，通过rx-queue发送到guest中的设备驱动
 
 
 
