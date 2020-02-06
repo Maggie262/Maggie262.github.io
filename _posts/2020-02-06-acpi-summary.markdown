@@ -17,4 +17,6 @@ tags:
 
 
 
-![](/img/in_posts/acpi_memory_hotplug.svg)
+
+
+![](/img/in_post/acpi_memory_hotplug.svg)
