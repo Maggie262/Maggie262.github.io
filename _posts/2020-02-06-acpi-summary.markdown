@@ -1,6 +1,6 @@
 ---
 layout:     post
-title:      "virtio-pci-device summary"
+title:      "acpi summary"
 subtitle:   "  "
 date:       2020-02-06
 author:     "Maggie"
