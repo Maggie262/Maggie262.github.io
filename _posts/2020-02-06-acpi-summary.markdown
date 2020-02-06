@@ -19,4 +19,4 @@ tags:
 
 
 
-![](/img/in_post/acpi_memory_hotplug.svg)
+![](/img/in-post/post-acpi-memory-hotplug.svg)
