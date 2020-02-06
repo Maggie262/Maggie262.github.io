@@ -154,7 +154,23 @@ virtio-vsock设备有两个virtio queue
 * 其中tx-queue负责接收前端的virtio buffer，并构造Vockpacket，发送到vsock-backend进行处理
 * rx-queue：vsock-backend产生的vsock-packet，通过rx-queue发送到guest中的设备驱动
 
+局限：
 
+* 前后端通信时仍然需要虚拟机陷出到kvm，然后进hypervisor处理，再通知vsock-backend
+
+
+
+
+
+
+
+#### vhost-vsock
+
+结构：
+
+![](/img/in_post/post-vhost-vsock.bmp)
+
+只需陷出到KVM（内核态），直接通知用户态的vsock-backend
 
 
 
