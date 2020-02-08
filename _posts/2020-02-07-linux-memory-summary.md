@@ -1,16 +1,29 @@
+---
+layout:     post
+title:      "linux memory management summary"
+subtitle:   "  "
+date:       2020-02-07
+author:     "Maggie"
+header-img: "img/post-bg-digital-native.jpg"
+catalog: true
+tags:
+    - linux
+    - memory
+---
+
 ## linux内存管理总结
 
 
 
 ### 进程的地址空间分布
 
-![](/Users/weilong/yang_me/notes/process-memory-location.jpg)
+![](/img/in-post/process-memory-location.jpg)
 
 
 
 linux内存管理大图：
 
-![](/Users/weilong/yang_me/notes/2020-02-07-linux-memory-summary.gif)
+![](/img/in-post/2020-02-07-linux-memory-summary.gif)
 
 
 
