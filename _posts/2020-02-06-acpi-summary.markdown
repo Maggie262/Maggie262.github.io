@@ -88,7 +88,8 @@ ACPI表的解析过程
 
 * 结构
 
-  ![](/img/in-post/post-acpi-summary2.bmp)
+  ![](/img/in-post/acpi_table.bmp)
+  ![](/img/in-post/fadt_table.bmp)
 
 * 解析过程
 
