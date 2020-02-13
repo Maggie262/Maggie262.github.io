@@ -491,21 +491,6 @@ start_kernel
 
 * OS 枚举主板上的设备，通过读取namespace中的包含__HID的devices
 
-* 预定义的namespace
-
-  右斜杠\是根目录，后面的点.标识当前父节点的子节点
-
-  ```
-  \_GPE        : General events in GPE register block
-  
-  \_PR        : ACPI 1.0 Processor Namespace.
-  
-  \_SB        : All Device/Bus Objects under this namespace
-  
-  \_SI        : System Indicator.
-  
-  \_TZ        : ACPI 1.0 Thermal Zonen namespace.
-  ```
 
 
 
@@ -873,65 +858,6 @@ acpi_ev_sci_xrupt_handler
 
 
 
-### ASL & AML 
-
-* ASL(ACPI Source Language)：ASL在经过编译器编译后，变成AML(ACPI Machine Language)。
-* AML(ACPI Machine Language)： 是一种BYTECODE， 由OSPM执行。
-
-
-
-#### 设备标识
-
-##### 硬件 ID（_HID）
-
-在 ACPI 中标识设备的最低要求是硬件 ID （_HID）对象。供应商 Id 在整个行业中必须是唯一的。 Microsoft 会分配这些字符串以确保它们是唯一的。 可以从[即插即用 ID-PNPID 请求](https://go.microsoft.com/fwlink/p/?linkid=330999)中获取供应商 id。
-
-**注意** ACPI 5.0 还支持在 _HID 和其他标识对象中使用 PCI 分配的供应商 id，因此你可能不需要从 Microsoft 获取供应商 ID。 有关硬件标识要求的详细信息，请参阅[ACPI 5.0 规范](https://uefi.org/specifications)的 "_HID （硬件 ID）" 部分。
-
-
-
-##### 兼容ID (_CID)
-
-对于与 Windows 附带的收件箱驱动程序兼容的设备，Microsoft 保留了供应商 ID "PNP"。 Windows 定义了多个与此供应商 ID 结合使用的设备 Id，该 ID 可用于为设备加载 Windows 提供的驱动程序。 兼容 ID （_CID）对象是单独的对象，用于返回这些标识符。 Windows 始终优先于 INF 匹配和驱动程序选择中的兼容 Id （由 _CID 返回）上的硬件 Id （由 _HID 返回）。 如果供应商提供的特定于设备的驱动程序不可用，则此首选项允许将 Windows 提供的驱动程序视为默认驱动程序。 
-
-
-
-##### 子系统 ID （\_SUB）、硬件修订版本（\_HRV）和类（\_CLS）
-
-OEM 系统上的设备 Id 是 "四部分" Id。 这四个部分分别是供应商 ID、设备 ID、子系统供应商（OEM） ID 和子系统（OEM）设备 ID。 因此，对于 OEM 平台，需要子系统 ID （_SUB）对象。
-
-##### Address （\_ADR）唯一ID （\_UID）
-
-设备标识有三个附加要求：
-
-- 对于连接到硬件可枚举的父总线（例如，SDIO、USB HSIC），但具有平台特定功能或控件（例如，sideband 电源或唤醒中断）的设备，不使用 \_HID。 相反，设备标识符由父总线驱动程序创建（如前文所述）。 但在这种情况下，地址对象（\_ADR）需要位于设备的 ACPI 命名空间中。 此对象使操作系统能够将总线枚举设备与 ACPI 描述的功能或控件相关联。
-- 在使用特定 IP 块的多个实例的平台上，因此每个块都具有相同的设备标识对象，这是唯一标识符（_UID）对象，使操作系统能够区分块。
-- 特定命名空间范围中的两个设备不能具有相同的名称。
-
-
-
-#### 资源配置
-
-对于命名空间中标识的每个设备，**当前资源设置（\_CRS）对象还必须报告设备使用的系统资源（内存地址、中断等）**。 支持对多个可能的资源配置（_PR）和用于更改设备资源配置（_SRS）的控件进行报告，但这是可选的。
-
-用于 SoC 平台的新的是设备可以使用的 GPIO 和简单外围总线（SPB）资源。 有关详细信息，请参阅[常规用途 i/o （GPIO）](https://docs.microsoft.com/zh-cn/windows-hardware/drivers/bringup/general-purpose-i-o--gpio-)和[简单外围总线（SPB）](https://docs.microsoft.com/zh-cn/windows-hardware/drivers/bringup/simple-peripheral-bus--spb-)。
-
-另外，对于 SoC 平台，还可以使用常规用途固定 DMA 描述符。 FixedDMA 描述符支持多个系统设备共享 DMA 控制器硬件。 静态分配给特定系统设备的 DMA 资源（请求行和通道寄存器）在 FixedDMA 描述符中列出。 有关详细信息，请参阅[ACPI 5.0 规范](https://uefi.org/specifications)的 "FIXEDDMA （DMA 资源描述符宏）" 19.5.49 部分。
-
-##### 设备状态更改
-
-出于多种原因，可以禁用或删除 ACPI 枚举设备。 **提供状态（_STA）对象是为了使此类状态更改能够传递到操作系统**。 有关 _STA 的说明，请参阅[ACPI 5.0 规范](https://uefi.org/specifications)的6.3.7 部分。 Windows 使用 _STA 来确定是否应枚举设备，并将其显示为已禁用或对用户不可见。 此控制在固件中适用于许多应用程序，包括停靠和 USB OTG 主机到功能切换。
-
-此外，**ACPI 还提供了一种通知机制，ASL 可以使用该机制来通知平台中事件的驱动程序，如作为插接的一部分被删除的设备。 通常，当 ACPI 设备的状态发生更改时，固件必须执行 "设备检查" 或 "总线检查" 通知，以使 Windows 重新枚举设备并重新评估其 _STA**。 有关 ACPI 通知的信息，请参阅[acpi 5.0 规范](https://uefi.org/specifications)的 "设备对象通知" 部分5.6.6。
-
-
-
-
-
-
-
-
-
 
 
 ### PCI with ACPI 
@@ -1059,4 +985,326 @@ struct pci_slot {
 ```
 
 
+
+
+
+#### PCI 设备热插拔流程
+
+```c
+acpi_init()
+	-> acpi_bus_notify()
+		-> acpi_install_notify_handler(ACPI_ROOT_OBJECT, ACPI_SYSTEM_NOTIFY, &acpi_bus_notify, NULL);
+```
+
+初始化过程中将acpi_bus_notify作为系统级别的通告的处理函数
+
+```c
+acpi_bus_notify // 根据通告类型进行处理，如果是热插拔事件，找到对应设备的驱动，调用驱动中定义的notify函数
+    
+    -> driver.ops->notify 
+    /* 以内存为例， 注册notify函数： drivers/xen/xen-acpi-memhotplug.c
+     * acpi_install_notify_handler(handle, ACPI_SYSTEM_NOTIFY, acpi_memory_device_notify, NULL);
+     */
+     	-> acpi_memory_device_notify
+     		-> (case ACPI_NOTIFY_DEVICE_CHECK) acpi_memory_get_device(handle, &mem_device)
+     			-> acpi_bus_scan(handle)
+    			/* 在给定的namespace scope(handle)中添加设备节点 */
+    				-> acpi_walk_namespace(ACPI_TYPE_ANY, handle, ACPI_UINT32_MAX, acpi_bus_check_add, NULL, NULL, &device);
+					/* 遍历， 找到对应的设备之后， 调用函数 acpi_bus_check_add */
+					-> acpi_bus_attach(device)
+    				/* 寻找该设备匹配的handler， 设置到device的handler字段中， 然后调用device->attach
+    				 * 调用device->attach：将device 和对应的driver绑定
+    				*/
+                    	-> acpi_scan_attach_handler(device)
+                            -> handler->attach(device, devid)
+
+/* 以内存设备为例，attach函数为acpi_memory_device_add
+ * 初始化： acpi_scan_init -> acpi_memory_hotplug_init() -> acpi_scan_add_handler_with_hotplug
+ * 指定hotplug的handler 为 memory_device_handler
+ */
+acpi_memory_device_add
+	-> acpi_memory_check_device
+	/* 检查设备的 _STA 状态等 */
+	-> acpi_memory_enable_device
+```
+
+
+
+```c
+static void hotplug_event(u32 type, struct acpiphp_context *context)
+{
+        switch (type) {
+        case ACPI_NOTIFY_BUS_CHECK:
+        case ACPI_NOTIFY_DEVICE_CHECK:
+        case ACPI_NOTIFY_EJECT_REQUEST:
+}
+
+// DSDT中PCI host bridge定义的Method
+Method (PCNT, 0, NotSerialized)
+        {
+            BNUM = Zero
+            DVNT (PCIU, One)   // 对应 ACPI_NOTIFY_DEVICE_CHECK
+            DVNT (PCID, 0x03)  // 对应 ACPI_NOTIFY_EJECT_REQUEST
+        }
+```
+
+
+
+```c
+acpi_pci_root_add
+  ->pci_acpi_scan_root()
+	-> pci_create_root_bus()
+		-> pci_register_host_bridge()
+			-> pcibios_add_bus()
+				-> acpi_pci_add_bus()
+					-> acpiphp_enumerate_slots()
+						-> acpi_walk_namespace(ACPI_TYPE_DEVICE, handle, 1, acpiphp_add_context, NULL, bridge, NULL);
+/* acpiphp_init_context中指定 context->hp.notify = acpiphp_hotplug_notify */
+
+acpiphp_hotplug_notify
+  ->hotplug_event
+	-> (case: ACPI_NOTIFY_DEVICE_CHECK) acpiphp_check_bridge(bridge);
+        -> if (device_status_valid(get_slot_status(slot))) 
+        /* 首先是遍历当前宿主桥下所有的SLOT，通过调用其_STA方法获得当前每个插槽上的状态，
+         * 如果没有_STA方法，就直接检查当前的SLOT上的厂商号是否为全F,如果不是，表示有设备插入。
+         */
+        -> (if = true) enable_slot(slot, true);
+        /* 如果是native hotplug, 调用函数acpiphp_native_scan_bridge
+         * 否则
+         */
+			|-> acpiphp_rescan_slot(slot);
+			/* 对于当前slot中的所有dev, 将对应的acpi_device加入到namespace scope中（acpi_bus_scan）
+			 * 给slot中的所有设备上电
+			 * 扫描slot中的所有设备，对于新发现的设备，添加到@bus->devices链表中，设置is_added=true
+			 */
+			 	   -> pci_scan_slot()
+			 	   		-> pci_scan_single_device
+			 	   			-> pci_scan_device
+			 	   			-> pci_device_add(dev, bus) // 设备初始化，设置cap等，
+            |-> pci_scan_bridge(bus, dev, max, pass);  // 扫描两遍
+                -> pci_scan_bridge_extend(bus, dev, max, 0, pass);
+				/* 扫描PCI桥和下面的所有总线，扫描两遍
+				 * 第一遍扫描已经配置的总线，第二扫描并配置其他总线，在此过程中会设置每个slot热插拔的callback
+				 */
+                    -> pci_add_new_bus(bus, dev, secondary);
+                        -> pci_alloc_child_bus
+                            -> pcibios_add_bus(child)
+                                -> acpi_pci_add_bus(bus)
+                                    -> acpiphp_enumerate_slots(bus)
+             /* 下面调用pcibios_resource_survey_bus函数为bridge分配资源，
+              * 并对bus下面挂载的设备分配资源
+              * 然后调用函数__pci_bus_assign_resources将分配的资源，设置到设备的配置空间中
+              */
+             |-> pcibios_resource_survey_bus(dev->subordinate); 
+             |-> __pci_bus_assign_resources
+             |-> 调用所有函数的驱动函数？
+```
+
+
+
+```c
+/*
+ * ACPI Hotplug Context
+ * --------------------
+ */
+struct acpi_hotplug_context {
+>---struct acpi_device *self;
+>---int (*notify)(struct acpi_device *, u32);
+>---void (*uevent)(struct acpi_device *, u32);
+>---void (*fixup)(struct acpi_device *);
+};
+```
+
+
+
+##### ACPI PCI hotplug Method
+
+ACPI GED device定义的\_EVT函数实例
+
+```
+            Device (\_SB.GED)
+            {
+                Name (_HID, "ACPI0013" /* Generic Event Device */)  // _HID: Hardware ID
+                Name (_UID, Zero)  // _UID: Unique ID
+                Name (_CRS, ResourceTemplate ()  // _CRS: Current Resource Settings
+                {
+                    ...
+                    Interrupt (ResourceConsumer, Level, ActiveHigh, Exclusive, ,, )
+                    {
+                        0x00000012,
+                    }
+                })
+                Method (_EVT, 1, Serialized)  // _EVT: Event
+                {
+                    Local0 = One
+                    While ((Local0 == One))
+                    {
+                        Local0 = Zero
+                        If ((Arg0 == 0x10))
+                        {
+                            \_SB.CPUS.CSCN ()
+                        }
+                        ....
+                        ElseIf ((Arg0 == 0x12))
+                        {
+                            Acquire (\_SB.PCI0.BLCK, 0xFFFF)
+                            \_SB.PCI0.PCNT ()
+                            Release (\_SB.PCI0.BLCK)
+                        }
+                    }
+                }
+            }
+```
+
+如果是CPU热插拔，调用CPUS定义的CSDN函数；如果是PCI设备热插拔，调用PCI bus定义的PCNT()函数
+
+```
+        Method (PCNT, 0, NotSerialized)
+        {
+            BNUM = Zero
+            DVNT (PCIU, One)
+            DVNT (PCID, 0x03)
+        }
+        Method (DVNT, 2, NotSerialized)
+        {
+            If ((Arg0 & 0x02))
+            {
+                Notify (S08, Arg1)
+            }
+            …
+        }
+- OS will Call DVNT (PCIU, One), which will then call Notify() for each and every slot that is marked as UP with argument One
+- OS will Call DVNT (PCID, 0x03), which will then call Notify() for each and every slot that is marked as DOWN with argument 0x03
+
+// in linux
+ACPI_NOTIFY_DEVICE_CHECK     	(u8) 0x01
+ACPI_NOTIFY_EJECT_REQUEST   	(u8) 0x03
+```
+
+
+
+
+
+
+
+
+
+### ASL & AML 
+
+- ASL(ACPI Source Language)：ASL在经过编译器编译后，变成AML(ACPI Machine Language)。
+- AML(ACPI Machine Language)： 是一种BYTECODE， 由OSPM执行。
+
+
+
+#### 设备标识
+
+##### 硬件 ID（_HID）
+
+在 ACPI 中标识设备的最低要求是硬件 ID （_HID）对象。供应商 Id 在整个行业中必须是唯一的。 Microsoft 会分配这些字符串以确保它们是唯一的。 可以从[即插即用 ID-PNPID 请求](https://go.microsoft.com/fwlink/p/?linkid=330999)中获取供应商 id。
+
+**注意** ACPI 5.0 还支持在 _HID 和其他标识对象中使用 PCI 分配的供应商 id，因此你可能不需要从 Microsoft 获取供应商 ID。 有关硬件标识要求的详细信息，请参阅[ACPI 5.0 规范](https://uefi.org/specifications)的 "_HID （硬件 ID）" 部分。
+
+
+
+##### 兼容ID (_CID)
+
+对于与 Windows 附带的收件箱驱动程序兼容的设备，Microsoft 保留了供应商 ID "PNP"。 Windows 定义了多个与此供应商 ID 结合使用的设备 Id，该 ID 可用于为设备加载 Windows 提供的驱动程序。 兼容 ID （_CID）对象是单独的对象，用于返回这些标识符。 Windows 始终优先于 INF 匹配和驱动程序选择中的兼容 Id （由 _CID 返回）上的硬件 Id （由 _HID 返回）。 如果供应商提供的特定于设备的驱动程序不可用，则此首选项允许将 Windows 提供的驱动程序视为默认驱动程序。 
+
+
+
+##### 子系统 ID （\_SUB）、硬件修订版本（\_HRV）和类（\_CLS）
+
+OEM 系统上的设备 Id 是 "四部分" Id。 这四个部分分别是供应商 ID、设备 ID、子系统供应商（OEM） ID 和子系统（OEM）设备 ID。 因此，对于 OEM 平台，需要子系统 ID （_SUB）对象。
+
+##### Address （\_ADR）唯一ID （\_UID）
+
+设备标识有三个附加要求：
+
+- 对于连接到硬件可枚举的父总线（例如，SDIO、USB HSIC），但具有平台特定功能或控件（例如，sideband 电源或唤醒中断）的设备，不使用 \_HID。 相反，设备标识符由父总线驱动程序创建（如前文所述）。 但在这种情况下，地址对象（\_ADR）需要位于设备的 ACPI 命名空间中。 此对象使操作系统能够将总线枚举设备与 ACPI 描述的功能或控件相关联。
+- 在使用特定 IP 块的多个实例的平台上，因此每个块都具有相同的设备标识对象，这是唯一标识符（_UID）对象，使操作系统能够区分块。
+- 特定命名空间范围中的两个设备不能具有相同的名称。
+
+
+
+#### 资源配置
+
+对于命名空间中标识的每个设备，**当前资源设置（\_CRS）对象还必须报告设备使用的系统资源（内存地址、中断等）**。 支持对多个可能的资源配置（_PR）和用于更改设备资源配置（_SRS）的控件进行报告，但这是可选的。
+
+用于 SoC 平台的新的是设备可以使用的 GPIO 和简单外围总线（SPB）资源。 有关详细信息，请参阅[常规用途 i/o （GPIO）](https://docs.microsoft.com/zh-cn/windows-hardware/drivers/bringup/general-purpose-i-o--gpio-)和[简单外围总线（SPB）](https://docs.microsoft.com/zh-cn/windows-hardware/drivers/bringup/simple-peripheral-bus--spb-)。
+
+另外，对于 SoC 平台，还可以使用常规用途固定 DMA 描述符。 FixedDMA 描述符支持多个系统设备共享 DMA 控制器硬件。 静态分配给特定系统设备的 DMA 资源（请求行和通道寄存器）在 FixedDMA 描述符中列出。 有关详细信息，请参阅[ACPI 5.0 规范](https://uefi.org/specifications)的 "FIXEDDMA （DMA 资源描述符宏）" 19.5.49 部分。
+
+##### 设备状态更改
+
+出于多种原因，可以禁用或删除 ACPI 枚举设备。 **提供状态（_STA）对象是为了使此类状态更改能够传递到操作系统**。 有关 _STA 的说明，请参阅[ACPI 5.0 规范](https://uefi.org/specifications)的6.3.7 部分。 Windows 使用 _STA 来确定是否应枚举设备，并将其显示为已禁用或对用户不可见。 此控制在固件中适用于许多应用程序，包括停靠和 USB OTG 主机到功能切换。
+
+此外，**ACPI 还提供了一种通知机制，ASL 可以使用该机制来通知平台中事件的驱动程序，如作为插接的一部分被删除的设备。 通常，当 ACPI 设备的状态发生更改时，固件必须执行 "设备检查" 或 "总线检查" 通知，以使 Windows 重新枚举设备并重新评估其 _STA**。 有关 ACPI 通知的信息，请参阅[acpi 5.0 规范](https://uefi.org/specifications)的 "设备对象通知" 部分5.6.6。
+
+
+
+#### namespace
+
+
+
+* 预定义的namespace
+
+  右斜杠\是根目录，后面的点.标识当前父节点的子节点
+
+  \_GPE     : General events in GPE register block
+
+  \_PR        : ACPI 1.0 Processor Namespace.
+
+  \_SB        : All Device/Bus Objects under this namespace
+
+  \_SI        : System Indicator.
+
+  \_TZ        : ACPI 1.0 Thermal Zonen namespace.
+
+  * 固定长度，4个字节，如果不足，会自动补足'_'
+  * '_'开头的名称是ACPI自留的，自定义的必须以'A-Z'开头
+  * 变量名或者函数名不区分大小写
+  * AML中的目录有相对路径和绝对路径
+  * Scope或者device都会形成自己的作用域
+  * 函数只能有8个参数，Arg0-Arg7. 局部变量只能有8个, Local0 -Local7
+
+
+
+
+
+
+
+
+
+附：
+
+* IOAPIC （MADT中）
+
+  ```c
+  start_kernel > setup_arch > acpi_boot_init > acpi_process_madt >
+  
+  acpi_table_parse/acpi_parse_madt中:
+  
+  	if(madt->address) {
+  		acpi_lapic_addr = (u64) madt->address;
+  ```
+
+* **ACPI中寻找一个Table，然后针对它运行handler**
+
+  `int __init acpi_table_parse(char *id, acpi_table_handler handler)`
+
+* 
+
+
+
+
+
+
+
+
+
+
+
+TODO :
+
+https://blog.csdn.net/gaojy19881225/article/details/80018761
 
