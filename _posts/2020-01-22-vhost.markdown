@@ -44,7 +44,7 @@ vhost架构的一个惊人的特性是其并没有绑定在KVM上。其仅是一
 
 ```powershell
 |------------------------|
-|	    vhost client	 |---------
+|       vhost client	 |---------
 |--------------------	 |		  |
 |	shared memory	|----|		  |
 |-------------------- 	 |		 socket
@@ -191,6 +191,47 @@ virtio-vsock设备有两个virtio queue
     }
 ```
 
+
+
+
+
+
+
+###cloud-hypervisor
+
+vhost-user-blk
+
+vring等协商的过程直接通知到backend
+
+runtime: config-change等消息由后端发送到qemu，Master进行处理
+
+```rust
+/// Type of requests sending from slaves to masters.
+#[repr(u32)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum SlaveReq {
+    /// Null operation.
+    NOOP = 0,
+    /// Send IOTLB messages with struct vhost_iotlb_msg as payload.
+    IOTLB_MSG = 1,
+    /// Notify that the virtio device's configuration space has changed.
+    CONFIG_CHANGE_MSG = 2,
+    /// Set host notifier for a specified queue.
+    VRING_HOST_NOTIFIER_MSG = 3,
+    /// Virtio-fs draft: map file content into the window.
+    FS_MAP = 4,
+    /// Virtio-fs draft: unmap file content from the window.
+    FS_UNMAP = 5,
+    /// Virtio-fs draft: sync file content.
+    FS_SYNC = 6,
+    /// Upper bound of valid commands.
+    MAX_CMD = 7,
+}
+```
+
+* kill event 和pause  event和config change 由后端处理
+
+* queue event由vhost-user-bachend处理
 
 
 

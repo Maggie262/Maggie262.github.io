@@ -103,6 +103,37 @@ Feature `unstable_utils` includes `mmio` which is neither a dependency nor anoth
 
 
 
+### rust编译选项
+
+
+
+两个主要的配置：
+
+* `dev`（执行`cargo build`）
+* `release` （执行`cargo build --release`）
+
+两个配置对应不同的opt-level
+
+```rust
+// Cargo.toml
+[profile.dev]
+opt-level = 0  // 编译快, 执行慢
+
+[profile.release]
+opt-level = 3  // 编译慢, 执行快
+```
+
+同时， 可以在Cargo.toml中配置opt-level
+
+```rust
+[profile.dev]
+opt-level = 1
+```
+
+这样在执行`cargo build`时， opt-level为1.
+
+
+
 
 
 
