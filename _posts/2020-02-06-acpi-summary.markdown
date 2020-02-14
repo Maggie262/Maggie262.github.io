@@ -1244,21 +1244,17 @@ OEM 系统上的设备 Id 是 "四部分" Id。 这四个部分分别是供应�
 
 #### namespace
 
-
-
 * 预定义的namespace
 
   右斜杠\是根目录，后面的点.标识当前父节点的子节点
 
+  ```c
   \_GPE     : General events in GPE register block
-
   \_PR        : ACPI 1.0 Processor Namespace.
-
   \_SB        : All Device/Bus Objects under this namespace
-
   \_SI        : System Indicator.
-
   \_TZ        : ACPI 1.0 Thermal Zonen namespace.
+  ```
 
   * 固定长度，4个字节，如果不足，会自动补足'_'
   * '_'开头的名称是ACPI自留的，自定义的必须以'A-Z'开头
@@ -1270,6 +1266,36 @@ OEM 系统上的设备 Id 是 "四部分" Id。 这四个部分分别是供应�
 
 
 
+
+在`pci_acpi_init()`函数中，指定irq分配
+
+```c
+pcibios_enable_irq = acpi_pci_irq_enable;
+pcibios_disable_irq = acpi_pci_irq_disable;
+```
+
+`acpi_pci_irq_enable`函数：
+
+读取设备的\_PRT方法，得到PCI设备的中断管脚INTx与中断控制器的中断输入之间的映射关系，PCI root bridge必须包含\_PRT方法，该方法包含Package，表明中断管脚和irq映射关系
+
+* 两种方式
+
+  * ACPI中指定Interrupt line device，PCI设备的Intx与irq之间的映射可以配置。\_PRT方法中Package的source字段是Interrupt line device的路径
+  * PCI设备中断关键与irq的映射不可配置，\_PRT方法中Package的source字段为0，source index字段指明GSI。
+
+  
+
+
+
+
+
+TODO :
+
+acpi_pci_enable_device
+
+PCI中断管脚
+
+中断路由
 
 
 
@@ -1307,4 +1333,3 @@ OEM 系统上的设备 Id 是 "四部分" Id。 这四个部分分别是供应�
 TODO :
 
 https://blog.csdn.net/gaojy19881225/article/details/80018761
-

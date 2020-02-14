@@ -97,10 +97,9 @@ VHOST_SET_VRING_ERR
 
 
 
+#### 分析
 
-####分析
-
-![](/img/in_post/post-vhost-user.bmp)
+![](/img/in-post/post-vhost-user.bmp)
 
 
 
@@ -168,9 +167,29 @@ virtio-vsock设备有两个virtio queue
 
 结构：
 
-![](/img/in_post/post-vhost-vsock.bmp)
+![](../img/in-post/post-vhost-vsock.bmp)
 
 只需陷出到KVM（内核态），直接通知用户态的vsock-backend
+
+
+
+
+
+
+
+###cloud-hypervisor
+
+以block -device为例。 在main()函数中就根据config，创建block-backend
+
+```rust
+    if let Some(backend_command) = cmd_arguments.value_of("net-backend") {
+        start_net_backend(backend_command);
+    } else if let Some(backend_command) = cmd_arguments.value_of("block-backend") {
+        start_block_backend(backend_command);
+    } else {
+        start_vmm(cmd_arguments);
+    }
+```
 
 
 
